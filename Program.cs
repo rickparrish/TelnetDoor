@@ -148,7 +148,11 @@ namespace RandM.TelnetDoor
 
         static void OnCLP(object sender, CommandLineParameterEventArgs e)
         {
-            if (e.Key == 'P')
+            if (e.Key == 'E')
+            {
+                Door.LocalEcho = true;
+            }
+            else if (e.Key == 'P')
             {
                 if (!int.TryParse(e.Value, out _Port)) _Port = 0;
             }
