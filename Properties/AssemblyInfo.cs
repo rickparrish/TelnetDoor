@@ -7,7 +7,7 @@ using System.Resources;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("TelnetDoor")]
-[assembly: AssemblyDescription("A BBS door that allows users to connect to remote telnet servers")]
+[assembly: AssemblyDescription("A BBS door that allows users to connect to remote servers")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("R&M Software")]
 [assembly: AssemblyProduct("TelnetDoor")]

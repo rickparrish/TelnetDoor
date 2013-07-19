@@ -13,6 +13,7 @@ namespace RandM.TelnetDoor
         {
             Door.OnCLP += OnCLP;
             Door.Startup(args);
+            Door.StripLF = false;
 
             if (string.IsNullOrEmpty(_HostName))
             {
