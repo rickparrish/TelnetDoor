@@ -6,8 +6,12 @@ namespace RandM.TelnetDoor
     class Program
     {
         static string _HostName = "";
-        static int _Port = 23;
-        static TelnetConnection _Server = new TelnetConnection();
+        static int _Port = 0;
+        static bool _RLogin = false;
+        static string _RLoginClientUserName = "";
+        static string _RLoginServerUserName = "";
+        static string _RLoginTerminalType = "";
+        static TcpConnection _Server;
 
         static void Main(string[] args)
         {
@@ -25,46 +29,81 @@ namespace RandM.TelnetDoor
             {
                 Door.Write("Connecting to remote server...");
 
+                if (_RLogin)
+                {
+                    _Server = new RLoginConnection();
+                }
+                else
+                {
+                    _Server = new TelnetConnection();
+                }
+
+                // Sanity check on the port
+                if ((_Port < 1) || (_Port > 65535))
+                {
+                    _Port = (_RLogin) ? 513 : 23;
+                } 
+
                 if (_Server.Connect(_HostName, _Port))
                 {
-                    Door.WriteLn("connected!");
-
-                    if (Door.Local())
+                    bool CanContinue = true;
+                    if (_RLogin)
                     {
-                        Ansi.ESC5nEvent += new EventHandler(Ansi_ESC5nEvent);
-                        Ansi.ESC6nEvent += new EventHandler(Ansi_ESC6nEvent);
-                        Ansi.ESC255nEvent += new EventHandler(Ansi_ESC255nEvent);
+                        // Send rlogin header
+                        _Server.Write("\0" + _RLoginClientUserName + "\0" + _RLoginServerUserName + "\0" + _RLoginTerminalType + "\0");
+
+                        // Wait up to 5 seconds for a response
+                        char? Ch = _Server.ReadChar(5000);
+                        if ((Ch == null) || (Ch != '\0'))
+                        {
+                            CanContinue = false;
+                            Door.WriteLn("failed!");
+                            Door.WriteLn();
+                            Door.WriteLn("Looks like the remote server doesn't accept RLogin connections.");
+                        }
                     }
 
-                    while ((Door.Carrier) && (_Server.Connected))
+                    if (CanContinue)
                     {
-                        bool Yield = true;
+                        Door.WriteLn("connected!");
 
-                        // See if the server sent anything to the client
-                        if (_Server.CanRead())
+                        if (Door.Local())
                         {
-                            Door.Write(_Server.ReadString());
-                            Yield = false;
+                            Ansi.ESC5nEvent += new EventHandler(Ansi_ESC5nEvent);
+                            Ansi.ESC6nEvent += new EventHandler(Ansi_ESC6nEvent);
+                            Ansi.ESC255nEvent += new EventHandler(Ansi_ESC255nEvent);
                         }
 
-                        // See if the client sent anything to the server
-                        if (Door.KeyPressed())
+                        while ((Door.Carrier) && (_Server.Connected))
                         {
-                            string ToSend = "";
-                            while (Door.KeyPressed()) ToSend += Door.ReadKey();
-                            _Server.Write(ToSend);
+                            bool Yield = true;
 
-                            Yield = false;
+                            // See if the server sent anything to the client
+                            if (_Server.CanRead())
+                            {
+                                Door.Write(_Server.ReadString());
+                                Yield = false;
+                            }
+
+                            // See if the client sent anything to the server
+                            if (Door.KeyPressed())
+                            {
+                                string ToSend = "";
+                                while (Door.KeyPressed()) ToSend += Door.ReadKey();
+                                _Server.Write(ToSend);
+
+                                Yield = false;
+                            }
+
+                            // See if we need to yield
+                            if (Yield) Crt.Delay(1);
                         }
 
-                        // See if we need to yield
-                        if (Yield) Crt.Delay(1);
-                    }
-
-                    if ((Door.Carrier) && (!_Server.Connected))
-                    {
-                        Door.WriteLn();
-                        Door.WriteLn("Remote server closed the connection.");
+                        if ((Door.Carrier) && (!_Server.Connected))
+                        {
+                            Door.WriteLn();
+                            Door.WriteLn("Remote server closed the connection.");
+                        }
                     }
                 }
                 else
@@ -111,14 +150,27 @@ namespace RandM.TelnetDoor
         {
             if (e.Key == 'P')
             {
-                if (!int.TryParse(e.Value, out _Port)) _Port = 23;
-                if ((_Port < 1) || (_Port > 65535)) _Port = 23;
+                if (!int.TryParse(e.Value, out _Port)) _Port = 0;
             }
             else if (e.Key == 'S')
             {
                 _HostName = e.Value;
             }
-
+            else if (e.Key == 'X')
+            {
+                _RLogin = true;
+                _RLoginClientUserName = e.Value;
+            }
+            else if (e.Key == 'Y')
+            {
+                _RLogin = true;
+                _RLoginServerUserName = e.Value;
+            }
+            else if (e.Key == 'Z')
+            {
+                _RLogin = true;
+                _RLoginTerminalType = e.Value;
+            }
         }
     }
 }
