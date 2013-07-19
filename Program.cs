@@ -5,16 +5,16 @@ namespace RandM.TelnetDoor
 {
     class Program
     {
-        static string FHostName = "";
-        static int FPort = 23;
-        static TelnetConnection FTelnet = new TelnetConnection();
+        static string _HostName = "";
+        static int _Port = 23;
+        static TelnetConnection _Server = new TelnetConnection();
 
         static void Main(string[] args)
         {
             Door.OnCLP += OnCLP;
             Door.Startup(args);
 
-            if (FHostName == "")
+            if (string.IsNullOrEmpty(_HostName))
             {
                 Door.WriteLn("Your SysOp didn't tell me where to connect you!");
                 Door.WriteLn();
@@ -22,9 +22,9 @@ namespace RandM.TelnetDoor
             }
             else
             {
-                Door.Write("Connecting to telnet server...");
+                Door.Write("Connecting to remote server...");
 
-                if (FTelnet.Connect(FHostName, FPort))
+                if (_Server.Connect(_HostName, _Port))
                 {
                     Door.WriteLn("connected!");
 
@@ -35,14 +35,14 @@ namespace RandM.TelnetDoor
                         Ansi.ESC255nEvent += new EventHandler(Ansi_ESC255nEvent);
                     }
 
-                    while ((Door.Carrier) && (FTelnet.Connected))
+                    while ((Door.Carrier) && (_Server.Connected))
                     {
                         bool Yield = true;
 
                         // See if the server sent anything to the client
-                        if (FTelnet.CanRead())
+                        if (_Server.CanRead())
                         {
-                            Door.Write(FTelnet.ReadString());
+                            Door.Write(_Server.ReadString());
                             Yield = false;
                         }
 
@@ -51,7 +51,7 @@ namespace RandM.TelnetDoor
                         {
                             string ToSend = "";
                             while (Door.KeyPressed()) ToSend += Door.ReadKey();
-                            FTelnet.Write(ToSend);
+                            _Server.Write(ToSend);
 
                             Yield = false;
                         }
@@ -60,17 +60,17 @@ namespace RandM.TelnetDoor
                         if (Yield) Crt.Delay(1);
                     }
 
-                    if ((Door.Carrier) && (!FTelnet.Connected))
+                    if ((Door.Carrier) && (!_Server.Connected))
                     {
                         Door.WriteLn();
-                        Door.WriteLn("Disconnected from telnet server.");
+                        Door.WriteLn("Remote server closed the connection.");
                     }
                 }
                 else
                 {
                     Door.WriteLn("failed!");
                     Door.WriteLn();
-                    Door.WriteLn("Looks like the telnet server isn't online, please try back later.");
+                    Door.WriteLn("Looks like the remote server isn't online, please try back later.");
                 }
             }
 
@@ -84,25 +84,25 @@ namespace RandM.TelnetDoor
 
         static void Ansi_ESC5nEvent(object sender, EventArgs e)
         {
-            if (FTelnet.Connected)
+            if (_Server.Connected)
             {
-                FTelnet.Write("\x1b" + "[0n");
+                _Server.Write("\x1b" + "[0n");
             }
         }
 
         static void Ansi_ESC6nEvent(object sender, EventArgs e)
         {
-            if (FTelnet.Connected)
+            if (_Server.Connected)
             {
-                FTelnet.Write(Ansi.CursorPosition());
+                _Server.Write(Ansi.CursorPosition());
             }
         }
 
         static void Ansi_ESC255nEvent(object sender, EventArgs e)
         {
-            if (FTelnet.Connected)
+            if (_Server.Connected)
             {
-                FTelnet.Write(Ansi.CursorPosition(Crt.ScreenCols, Crt.ScreenRows));
+                _Server.Write(Ansi.CursorPosition(Crt.ScreenCols, Crt.ScreenRows));
             }
         }
 
@@ -110,12 +110,12 @@ namespace RandM.TelnetDoor
         {
             if (e.Key == 'P')
             {
-                int.TryParse(e.Value, out FPort);
-                if ((FPort < 1) || (FPort > 65535)) FPort = 23;
+                if (!int.TryParse(e.Value, out _Port)) _Port = 23;
+                if ((_Port < 1) || (_Port > 65535)) _Port = 23;
             }
             else if (e.Key == 'S')
             {
-                FHostName = e.Value;
+                _HostName = e.Value;
             }
 
         }
