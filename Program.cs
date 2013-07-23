@@ -29,7 +29,7 @@ namespace RandM.TelnetDoor
         static bool _RLogin = false;
         static string _RLoginClientUserName = "";
         static string _RLoginServerUserName = "";
-        static string _RLoginTerminalType = "";
+        static string _RLoginTerminalType = "ansi-bbs";
         static TcpConnection _Server;
 
         static void Main(string[] args)
@@ -37,6 +37,9 @@ namespace RandM.TelnetDoor
             Door.OnCLP += OnCLP;
             Door.Startup(args);
             Door.StripLF = false;
+
+            _RLoginClientUserName = Door.DropInfo.Alias;
+            _RLoginServerUserName = Door.DropInfo.Alias;
 
             if (string.IsNullOrEmpty(_HostName))
             {
@@ -174,6 +177,10 @@ namespace RandM.TelnetDoor
             else if (e.Key == 'P')
             {
                 if (!int.TryParse(e.Value, out _Port)) _Port = 0;
+            }
+            else if (e.Key == 'R')
+            {
+                _RLogin = true;
             }
             else if (e.Key == 'S')
             {
