@@ -1,6 +1,6 @@
 ﻿/*
   TelnetDoor: A BBS door to allow outgoing telnet or rlogin connections
-  Copyright (C) 2013  Rick Parrish, R&M Software
+  Copyright (C) 2014  Rick Parrish, R&M Software
 
   This file is part of TelnetDoor.
 
@@ -30,7 +30,7 @@ using System.Resources;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("R&M Software")]
 [assembly: AssemblyProduct("TelnetDoor")]
-[assembly: AssemblyCopyright("Copyright ©  2013")]
+[assembly: AssemblyCopyright("Copyright ©  2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
