@@ -1,5 +1,6 @@
 bin/Debug/*
 bin/Release/*
+!bin/Release/readme.txt
 !bin/Release/RMLib.dll
 !bin/Release/servers.ans
 !bin/Release/servers.ini
