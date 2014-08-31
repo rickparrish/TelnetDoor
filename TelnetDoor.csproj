@@ -61,6 +61,12 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="servers-header.ans">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="servers.ini">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="TelnetDoor.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -19,6 +19,7 @@
 */
 using RandM.RMLib;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace RandM.TelnetDoor
@@ -42,107 +43,27 @@ namespace RandM.TelnetDoor
                 using (Door = new RMDoor())
                 {
                     Door.StripLF = false;
+                    Door.TextAttr(7);
+                    Door.ClrScr();
+                    Door.GotoXY(1, 1);
 
                     // Default values (could be overridden when handling CLPs)
                     _RLoginClientUserName = Door.DropInfo.Alias;
                     _RLoginServerUserName = Door.DropInfo.Alias;
 
                     // Parse CLPs
-                    HandleCLPs();
+                    HandleCLPs(Environment.GetCommandLineArgs());
 
+                    // Check if we're being told where to connect, or should display a menu
                     if (string.IsNullOrEmpty(_HostName))
                     {
-                        Door.WriteLn("Your SysOp didn't tell me where to connect you!");
-                        Door.WriteLn();
-                        Door.WriteLn("(Tell him he forgot the -S parameter!)");
+                        // No hostname, display a menu
+                        Menu();
                     }
                     else
                     {
-                        Door.Write("Connecting to remote server...");
-
-                        if (_RLogin)
-                        {
-                            _Server = new RLoginConnection();
-                        }
-                        else
-                        {
-                            _Server = new TelnetConnection();
-                        }
-
-                        // Sanity check on the port
-                        if ((_Port < 1) || (_Port > 65535))
-                        {
-                            _Port = (_RLogin) ? 513 : 23;
-                        }
-
-                        if (_Server.Connect(_HostName, _Port))
-                        {
-                            bool CanContinue = true;
-                            if (_RLogin)
-                            {
-                                // Send rlogin header
-                                _Server.Write("\0" + _RLoginClientUserName + "\0" + _RLoginServerUserName + "\0" + _RLoginTerminalType + "\0");
-
-                                // Wait up to 5 seconds for a response
-                                char? Ch = _Server.ReadChar(5000);
-                                if ((Ch == null) || (Ch != '\0'))
-                                {
-                                    CanContinue = false;
-                                    Door.WriteLn("failed!");
-                                    Door.WriteLn();
-                                    Door.WriteLn("Looks like the remote server doesn't accept RLogin connections.");
-                                }
-                            }
-
-                            if (CanContinue)
-                            {
-                                Door.WriteLn("connected!");
-
-                                if (Door.Local)
-                                {
-                                    Ansi.ESC5nEvent += new EventHandler(Ansi_ESC5nEvent);
-                                    Ansi.ESC6nEvent += new EventHandler(Ansi_ESC6nEvent);
-                                    Ansi.ESC255nEvent += new EventHandler(Ansi_ESC255nEvent);
-                                }
-
-                                while ((Door.Carrier) && (_Server.Connected))
-                                {
-                                    bool Yield = true;
-
-                                    // See if the server sent anything to the client
-                                    if (_Server.CanRead())
-                                    {
-                                        Door.Write(_Server.ReadString());
-                                        Yield = false;
-                                    }
-
-                                    // See if the client sent anything to the server
-                                    if (Door.KeyPressed())
-                                    {
-                                        string ToSend = "";
-                                        while (Door.KeyPressed()) ToSend += Door.ReadKey();
-                                        _Server.Write(ToSend);
-
-                                        Yield = false;
-                                    }
-
-                                    // See if we need to yield
-                                    if (Yield) Crt.Delay(1);
-                                }
-
-                                if ((Door.Carrier) && (!_Server.Connected))
-                                {
-                                    Door.WriteLn();
-                                    Door.WriteLn("Remote server closed the connection.");
-                                }
-                            }
-                        }
-                        else
-                        {
-                            Door.WriteLn("failed!");
-                            Door.WriteLn();
-                            Door.WriteLn("Looks like the remote server isn't online, please try back later.");
-                        }
+                        // Have a hostname, connect to it
+                        Connect();
                     }
 
                     Door.WriteLn();
@@ -182,10 +103,105 @@ namespace RandM.TelnetDoor
             }
         }
 
-        private static void HandleCLPs()
+        private static void Connect()
         {
-            foreach (string Arg in Environment.GetCommandLineArgs())
+            Door.WriteLn();
+            Door.Write(" Connecting to remote server...");
+
+            if (_RLogin)
             {
+                _Server = new RLoginConnection();
+            }
+            else
+            {
+                _Server = new TelnetConnection();
+            }
+
+            // Sanity check on the port
+            if ((_Port < 1) || (_Port > 65535))
+            {
+                _Port = (_RLogin) ? 513 : 23;
+            }
+
+            if (_Server.Connect(_HostName, _Port))
+            {
+                bool CanContinue = true;
+                if (_RLogin)
+                {
+                    // Send rlogin header
+                    _Server.Write("\0" + _RLoginClientUserName + "\0" + _RLoginServerUserName + "\0" + _RLoginTerminalType + "\0");
+
+                    // Wait up to 5 seconds for a response
+                    char? Ch = _Server.ReadChar(5000);
+                    if ((Ch == null) || (Ch != '\0'))
+                    {
+                        CanContinue = false;
+                        Door.WriteLn("failed!");
+                        Door.WriteLn();
+                        Door.WriteLn(" Looks like the remote server doesn't accept RLogin connections.");
+                    }
+                }
+
+                if (CanContinue)
+                {
+                    Door.WriteLn("connected!");
+
+                    if (Door.Local)
+                    {
+                        Ansi.ESC5nEvent += new EventHandler(Ansi_ESC5nEvent);
+                        Ansi.ESC6nEvent += new EventHandler(Ansi_ESC6nEvent);
+                        Ansi.ESC255nEvent += new EventHandler(Ansi_ESC255nEvent);
+                    }
+
+                    while ((Door.Carrier) && (_Server.Connected))
+                    {
+                        bool Yield = true;
+
+                        // See if the server sent anything to the client
+                        if (_Server.CanRead())
+                        {
+                            Door.Write(_Server.ReadString());
+                            Yield = false;
+                        }
+
+                        // See if the client sent anything to the server
+                        if (Door.KeyPressed())
+                        {
+                            string ToSend = "";
+                            while (Door.KeyPressed()) ToSend += Door.ReadKey();
+                            _Server.Write(ToSend);
+
+                            Yield = false;
+                        }
+
+                        // See if we need to yield
+                        if (Yield) Crt.Delay(1);
+                    }
+
+                    if ((Door.Carrier) && (!_Server.Connected))
+                    {
+                        Door.WriteLn();
+                        Door.WriteLn();
+                        Door.WriteLn(" Remote server closed the connection.");
+                    }
+                }
+            }
+            else
+            {
+                Door.WriteLn("failed!");
+                Door.WriteLn();
+                Door.WriteLn(" Looks like the remote server isn't online, please try back later.");
+            }
+        }
+
+        private static void HandleCLPs(string[] args)
+        {
+            foreach (string Arg in args)
+            {
+                // With prefix it's something like:
+                // /Sbbs.ftelnet.ca
+                // Without prefix, it's something like:
+                // S=bbs.ftelnet.ca
                 if ((Arg.Length >= 2) && ((Arg[0] == '/') || (Arg[0] == '-')))
                 {
                     char Key = Arg.ToUpper()[1];
@@ -219,6 +235,103 @@ namespace RandM.TelnetDoor
                             break;
                     }
                 }
+            }
+        }
+
+        private static void Menu()
+        {
+            string AnsiHeader = StringUtils.PathCombine(ProcessUtils.StartupPath, "servers-header.ans");
+            string AnsiMenu = StringUtils.PathCombine(ProcessUtils.StartupPath, "servers.ans");
+            SortedDictionary<char, string> Servers = new SortedDictionary<char, string>();
+            string ServersIni = StringUtils.PathCombine(ProcessUtils.StartupPath, "servers.ini");
+
+            if (File.Exists(ServersIni))
+            {
+                using (IniFile Ini = new IniFile(ServersIni))
+                {
+                    char HotKey = 'A';
+                    string[] Sections = Ini.ReadSections();
+                    foreach (string Section in Sections)
+                    {
+                        Servers.Add(HotKey, Section);
+                        HotKey = (char)(HotKey + 1);
+                    }
+
+                    // Check whether we display a custom menu or the canned menu
+                    if (File.Exists(AnsiMenu))
+                    {
+                        // Custom menu
+                        Door.DisplayFile(AnsiMenu, 0);
+                    }
+                    else
+                    {
+                        // Canned menu, check if we display a custom header
+                        if (File.Exists(AnsiHeader))
+                        {
+                            // Custom header
+                            Door.DisplayFile(AnsiHeader, 0);
+                        }
+                        Door.WriteLn();
+
+                        // Menu options
+                        foreach (KeyValuePair<char, string> KVP in Servers)
+                        {
+                            Door.WriteLn("  |0F[|0E" + KVP.Key.ToString() + "|0F]|07 " + KVP.Value);
+                        }
+                        Door.WriteLn();
+                        Door.Write("  |0FYour choice (|0EESC|0F to abort):|07 ");
+                    }
+
+                    char? Ch = '\0';
+                    do
+                    {
+                        Ch = Door.ReadKey();
+                        if (Ch == null)
+                        {
+                            // Must have timed out waiting for input
+                            return;
+                        }
+                        else if ((char)Ch == '\x1B')
+                        {
+                            // Aborting
+                            Environment.Exit(0);
+                        }
+                        else
+                        {
+                            // Ensure key is valid
+                            HotKey = char.ToUpper((char)Ch);
+                            if (Servers.ContainsKey(HotKey))
+                            {
+                                // Valid option, set the parameters and connect
+                                List<string> Args = new List<string>();
+                                string[] Keys = Ini.ReadSection(Servers[HotKey]);
+                                foreach (string Key in Keys)
+                                {
+                                    Args.Add("-" + Key + Ini.ReadString(Servers[HotKey], Key, ""));
+                                }
+                                HandleCLPs(Args.ToArray());
+
+                                // Clear the screen and connect
+                                Door.ClrScr();
+                                Door.GotoXY(1, 1);
+                                Connect();
+                            }
+                            else
+                            {
+                                // Invalid option
+                                Ch = '\0';
+                            }
+                        }
+                    } while (Ch == '\0');
+                }
+            }
+            else
+            {
+                Door.WriteLn();
+                Door.WriteLn(" Oops, your SysOp didn't set this door up correctly!");
+                Door.WriteLn();
+                Door.WriteLn(" Tell them to either pass the -S parameter, or create a servers.ini file");
+                Door.WriteLn();
             }
         }
     }
