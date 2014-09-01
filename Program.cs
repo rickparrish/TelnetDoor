@@ -46,6 +46,7 @@ namespace RandM.TelnetDoor
                     Door.TextAttr(7);
                     Door.ClrScr();
                     Door.GotoXY(1, 1);
+                    Door.KeyPressed(); // Ensures statusbar gets drawn before connecting (which blocks updates)
 
                     // Default values (could be overridden when handling CLPs)
                     _RLoginClientUserName = Door.DropInfo.Alias;
@@ -66,6 +67,7 @@ namespace RandM.TelnetDoor
                         Connect();
                     }
 
+                    Door.ClearBuffers();
                     Door.WriteLn();
                     Door.TextAttr(15);
                     Door.Write(new string(' ', 30) + "Hit any key to Quit");
@@ -153,6 +155,7 @@ namespace RandM.TelnetDoor
                         Ansi.ESC255nEvent += new EventHandler(Ansi_ESC255nEvent);
                     }
 
+                    Door.PipeWrite = false;
                     while ((Door.Carrier) && (_Server.Connected))
                     {
                         bool Yield = true;
@@ -168,7 +171,7 @@ namespace RandM.TelnetDoor
                         if (Door.KeyPressed())
                         {
                             string ToSend = "";
-                            while (Door.KeyPressed()) ToSend += Door.ReadKey();
+                            while (Door.KeyPressed()) ToSend += (char)Door.ReadByte();
                             _Server.Write(ToSend);
 
                             Yield = false;
@@ -177,6 +180,7 @@ namespace RandM.TelnetDoor
                         // See if we need to yield
                         if (Yield) Crt.Delay(1);
                     }
+                    Door.PipeWrite = true;
 
                     if ((Door.Carrier) && (!_Server.Connected))
                     {
