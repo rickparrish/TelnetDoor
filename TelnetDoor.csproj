@@ -61,16 +61,16 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="servers-header.ans">
+    <None Include="TelnetDoor-Header.ans">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="servers.ini">
+    <None Include="TelnetDoor.ini">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TelnetDoor.snk" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="readme.txt">
+    <Content Include="Readme.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

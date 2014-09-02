@@ -27,6 +27,7 @@ namespace RandM.TelnetDoor
     class Program
     {
         static string _HostName = "";
+        static string _MenuFile = "TelnetDoor";
         static int _Port = 0;
         static bool _RLogin = false;
         static string _RLoginClientUserName = "";
@@ -217,6 +218,9 @@ namespace RandM.TelnetDoor
                         case 'E':
                             Door.LocalEcho = true;
                             break;
+                        case 'M':
+                            _MenuFile = Path.GetFileNameWithoutExtension(Value); // Just in case they specify .ini
+                            break;
                         case 'P':
                             if (!int.TryParse(Value, out _Port)) _Port = 0;
                             break;
@@ -245,10 +249,10 @@ namespace RandM.TelnetDoor
 
         private static void Menu()
         {
-            string AnsiHeader = StringUtils.PathCombine(ProcessUtils.StartupPath, "servers-header.ans");
-            string AnsiMenu = StringUtils.PathCombine(ProcessUtils.StartupPath, "servers.ans");
+            string AnsiHeader = StringUtils.PathCombine(ProcessUtils.StartupPath, _MenuFile + "-Header.ans");
+            string AnsiMenu = StringUtils.PathCombine(ProcessUtils.StartupPath, _MenuFile + ".ans");
             SortedDictionary<char, string> Servers = new SortedDictionary<char, string>();
-            string ServersIni = StringUtils.PathCombine(ProcessUtils.StartupPath, "servers.ini");
+            string ServersIni = StringUtils.PathCombine(ProcessUtils.StartupPath, _MenuFile + ".ini");
 
             if (File.Exists(ServersIni))
             {
@@ -343,8 +347,14 @@ namespace RandM.TelnetDoor
                 Door.WriteLn();
                 Door.WriteLn(" Oops, your SysOp didn't set this door up correctly!");
                 Door.WriteLn();
-                Door.WriteLn(" Tell them to either pass the -S parameter, or create a servers.ini file");
+                Door.WriteLn(" Tell them to either pass the -S parameter, or create a " + _MenuFile + ".ini file");
                 Door.WriteLn();
+
+                Door.ClearBuffers();
+                Door.TextAttr(15);
+                Door.Write(new string(' ', 30) + "Hit any key to quit");
+                Door.TextAttr(7);
+                Door.ReadKey();
             }
         }
     }

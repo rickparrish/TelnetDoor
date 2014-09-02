@@ -1,11 +1,11 @@
 bin/Debug/*
 bin/Release/*
-!bin/Release/readme.txt
+!bin/Release/Readme.txt
 !bin/Release/RMLib.dll
-!bin/Release/servers.ans
-!bin/Release/servers.ini
-!bin/Release/servers-header.ans
+!bin/Release/TelnetDoor.ans
+!bin/Release/TelnetDoor.ini
 !bin/Release/TelnetDoor.exe
+!bin/Release/TelnetDoor-Header.ans
 obj/*
 *.suo
 *.user

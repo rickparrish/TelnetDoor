@@ -10,11 +10,24 @@
 
 -E		Turn on local echo (default is for server to echo)
 
+-M		Specify a different menu file (default is TelnetDoor.ini)
 
-If you don't specify a server with the -S parameter then the servers listed in servers.ini
-will be displayed to the user.
 
-If a servers-header.ans exists, this header will be displayed before the list of servers.
+Examples:
 
-If a servers.ans exists, this screen will be displayed INSTEAD OF the list of servers.  This
-means servers.ans will have to include the list of servers.
+TelneteDoor.exe -L -Sbbs.ftelnet.ca -P23
+Connecto to bbs.ftelnet.ca:23 in local mode
+
+TelnetDoor.exe -D*DOOR32
+Display the contents of TelnetDoor.ini (-D passes the dropfile, *DOOR32 is how GameSrv would pass the dropfile path)
+
+TelnetDoor.exe -D*DOOR32 -MAmigaBBSes
+Display the contents of AmigaBBSes.ini instead of TelnetDoor.ini
+
+
+Notes for displaying a list of servers:
+
+If a TelnetDoor-Header.ans exists, this header will be displayed before the list of servers.
+
+If a TelnetDoor.ans exists, this screen will be displayed INSTEAD OF the list of servers.  This
+means TelnetDoor.ans will have to include the list of servers.
