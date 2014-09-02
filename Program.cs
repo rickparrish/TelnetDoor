@@ -65,14 +65,15 @@ namespace RandM.TelnetDoor
                     {
                         // Have a hostname, connect to it
                         Connect();
-                    }
 
-                    Door.ClearBuffers();
-                    Door.WriteLn();
-                    Door.TextAttr(15);
-                    Door.Write(new string(' ', 30) + "Hit any key to Quit");
-                    Door.TextAttr(7);
-                    Door.ReadKey();
+                        // Pause before quitting
+                        Door.ClearBuffers();
+                        Door.WriteLn();
+                        Door.TextAttr(15);
+                        Door.Write(new string(' ', 30) + "Hit any key to quit");
+                        Door.TextAttr(7);
+                        Door.ReadKey();
+                    }
                 }
             }
             catch (Exception ex)
@@ -261,35 +262,40 @@ namespace RandM.TelnetDoor
                         HotKey = (char)(HotKey + 1);
                     }
 
-                    // Check whether we display a custom menu or the canned menu
-                    if (File.Exists(AnsiMenu))
+                    // Going to repeatedly display this menu until the user hits ESC to quit
+                    while (true)
                     {
-                        // Custom menu
-                        Door.DisplayFile(AnsiMenu, 0);
-                    }
-                    else
-                    {
-                        // Canned menu, check if we display a custom header
-                        if (File.Exists(AnsiHeader))
-                        {
-                            // Custom header
-                            Door.DisplayFile(AnsiHeader, 0);
-                        }
-                        Door.WriteLn();
+                        // Reset display for re-display of menu
+                        Door.TextAttr(7);
+                        Door.ClrScr();
+                        Door.GotoXY(1, 1);
 
-                        // Menu options
-                        foreach (KeyValuePair<char, string> KVP in Servers)
+                        // Check whether we display a custom menu or the canned menu
+                        if (File.Exists(AnsiMenu))
                         {
-                            Door.WriteLn("  |0F[|0E" + KVP.Key.ToString() + "|0F]|07 " + KVP.Value);
+                            // Custom menu
+                            Door.DisplayFile(AnsiMenu, 0);
                         }
-                        Door.WriteLn();
-                        Door.Write("  |0FYour choice (|0EESC|0F to abort):|07 ");
-                    }
+                        else
+                        {
+                            // Canned menu, check if we display a custom header
+                            if (File.Exists(AnsiHeader))
+                            {
+                                // Custom header
+                                Door.DisplayFile(AnsiHeader, 0);
+                            }
+                            Door.WriteLn();
 
-                    char? Ch = '\0';
-                    do
-                    {
-                        Ch = Door.ReadKey();
+                            // Menu options
+                            foreach (KeyValuePair<char, string> KVP in Servers)
+                            {
+                                Door.WriteLn("  |0F[|0E" + KVP.Key.ToString() + "|0F]|07 " + KVP.Value);
+                            }
+                            Door.WriteLn();
+                            Door.Write("  |0FYour choice (|0EESC|0F to abort):|07 ");
+                        }
+
+                        char? Ch = Door.ReadKey();
                         if (Ch == null)
                         {
                             // Must have timed out waiting for input
@@ -298,7 +304,7 @@ namespace RandM.TelnetDoor
                         else if ((char)Ch == '\x1B')
                         {
                             // Aborting
-                            Environment.Exit(0);
+                            return;
                         }
                         else
                         {
@@ -319,14 +325,17 @@ namespace RandM.TelnetDoor
                                 Door.ClrScr();
                                 Door.GotoXY(1, 1);
                                 Connect();
-                            }
-                            else
-                            {
-                                // Invalid option
-                                Ch = '\0';
+
+                                // Disconnectd, pause to show the user the disconnect message
+                                Door.ClearBuffers();
+                                Door.WriteLn();
+                                Door.TextAttr(15);
+                                Door.Write(new string(' ', 30) + "Hit any key to continue");
+                                Door.TextAttr(7);
+                                Door.ReadKey();
                             }
                         }
-                    } while (Ch == '\0');
+                    }
                 }
             }
             else
