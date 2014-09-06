@@ -158,7 +158,8 @@ namespace RandM.TelnetDoor
                     }
 
                     Door.PipeWrite = false;
-                    while ((Door.Carrier) && (_Server.Connected))
+                    bool UserAborted = false;
+                    while (!UserAborted && Door.Carrier && _Server.Connected)
                     {
                         bool Yield = true;
 
@@ -173,7 +174,21 @@ namespace RandM.TelnetDoor
                         if (Door.KeyPressed())
                         {
                             string ToSend = "";
-                            while (Door.KeyPressed()) ToSend += (char)Door.ReadByte();
+                            while (Door.KeyPressed())
+                            {
+                                byte B = (byte)Door.ReadByte();
+                                if (B == 29)
+                                {
+                                    // Ctrl-[
+                                    _Server.Close();
+                                    UserAborted = true;
+                                    break;
+                                }
+                                else
+                                {
+                                    ToSend += (char)B;
+                                }
+                            }
                             _Server.Write(ToSend);
 
                             Yield = false;
@@ -184,7 +199,13 @@ namespace RandM.TelnetDoor
                     }
                     Door.PipeWrite = true;
 
-                    if ((Door.Carrier) && (!_Server.Connected))
+                    if (UserAborted)
+                    {
+                        Door.WriteLn();
+                        Door.WriteLn();
+                        Door.WriteLn(" User hit CTRL-[ to disconnect from server.");
+                    }
+                    else if ((Door.Carrier) && (!_Server.Connected))
                     {
                         Door.WriteLn();
                         Door.WriteLn();
