@@ -179,7 +179,7 @@ namespace RandM.TelnetDoor
                                 byte B = (byte)Door.ReadByte();
                                 if (B == 29)
                                 {
-                                    // Ctrl-[
+                                    // Ctrl-]
                                     _Server.Close();
                                     UserAborted = true;
                                     break;
@@ -203,7 +203,7 @@ namespace RandM.TelnetDoor
                     {
                         Door.WriteLn();
                         Door.WriteLn();
-                        Door.WriteLn(" User hit CTRL-[ to disconnect from server.");
+                        Door.WriteLn(" User hit CTRL-] to disconnect from server.");
                     }
                     else if ((Door.Carrier) && (!_Server.Connected))
                     {
