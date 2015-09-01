@@ -250,6 +250,12 @@ namespace RandM.TelnetDoor
                             break;
                         case 'S':
                             _HostName = Value;
+                            if (_HostName.Contains(":"))
+                            {
+                                // Looks like they passed a host:port combo, so try to parse that out
+                                int.TryParse(_HostName.Split(':')[1], out _Port);
+                                _HostName = _HostName.Split(':')[0];
+                            }
                             break;
                         case 'X':
                             _RLogin = true;
