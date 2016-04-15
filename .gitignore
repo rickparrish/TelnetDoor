@@ -7,5 +7,6 @@ bin/Release/*
 !bin/Release/TelnetDoor.exe
 !bin/Release/TelnetDoor-Header.ans
 obj/*
+packages/*
 *.suo
 *.user

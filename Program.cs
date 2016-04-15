@@ -43,6 +43,8 @@ namespace RandM.TelnetDoor
             {
                 using (Door = new RMDoor())
                 {
+                    File.AppendAllText("ex.log", Console.OutputEncoding.WebName + Environment.NewLine);
+
                     Door.StripLF = false;
                     Door.TextAttr(7);
                     Door.ClrScr();
