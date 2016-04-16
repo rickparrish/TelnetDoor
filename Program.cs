@@ -54,7 +54,7 @@ namespace RandM.TelnetDoor
                     _RLoginServerUserName = Door.DropInfo.Alias;
 
                     // Parse CLPs
-                    HandleCLPs(Environment.GetCommandLineArgs());
+                    HandleCLPs(args);
 
                     // Check if we're being told where to connect, or should display a menu
                     if (string.IsNullOrEmpty(_HostName))
