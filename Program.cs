@@ -1,6 +1,6 @@
 ﻿/*
   TelnetDoor: A BBS door to allow outgoing telnet or rlogin connections
-  Copyright (C) 2014  Rick Parrish, R&M Software
+  Copyright (C) 2016  Rick Parrish, R&M Software
 
   This file is part of TelnetDoor.
 
@@ -35,51 +35,52 @@ namespace RandM.TelnetDoor
         static string _RLoginTerminalType = "ansi-bbs";
         static TcpConnection _Server;
 
-        static RMDoor Door;
-
         static void Main(string[] args)
         {
             try
             {
-                using (Door = new RMDoor())
+                Door.Startup();
+                Door.StripLF = false;
+                Door.TextAttr(7);
+                Door.ClrScr();
+                Door.GotoXY(1, 1);
+                Door.KeyPressed(); // Ensures statusbar gets drawn before connecting (which blocks updates)
+
+                // Default values (could be overridden when handling CLPs)
+                _RLoginClientUserName = Door.DropInfo.Alias;
+                _RLoginServerUserName = Door.DropInfo.Alias;
+
+                // Parse CLPs
+                HandleCLPs(args);
+
+                // Check if we're being told where to connect, or should display a menu
+                if (string.IsNullOrEmpty(_HostName))
                 {
-                    Door.StripLF = false;
-                    Door.TextAttr(7);
-                    Door.ClrScr();
-                    Door.GotoXY(1, 1);
-                    Door.KeyPressed(); // Ensures statusbar gets drawn before connecting (which blocks updates)
-
-                    // Default values (could be overridden when handling CLPs)
-                    _RLoginClientUserName = Door.DropInfo.Alias;
-                    _RLoginServerUserName = Door.DropInfo.Alias;
-
-                    // Parse CLPs
-                    HandleCLPs(args);
-
-                    // Check if we're being told where to connect, or should display a menu
-                    if (string.IsNullOrEmpty(_HostName))
-                    {
-                        // No hostname, display a menu
-                        Menu();
-                    }
-                    else
-                    {
-                        // Have a hostname, connect to it
-                        Connect();
-
-                        // Pause before quitting
-                        Door.ClearBuffers();
-                        Door.WriteLn();
-                        Door.TextAttr(15);
-                        Door.Write(new string(' ', 30) + "Hit any key to quit");
-                        Door.TextAttr(7);
-                        Door.ReadKey();
-                    }
+                    // No hostname, display a menu
+                    Menu();
                 }
+                else
+                {
+                    // Have a hostname, connect to it
+                    Connect();
+
+                    // Pause before quitting
+                    Door.ClearBuffers();
+                    Door.WriteLn();
+                    Door.TextAttr(15);
+                    Door.Write(new string(' ', 30) + "Hit any key to quit");
+                    Door.TextAttr(7);
+                    Door.ReadKey();
+                }
+
             }
             catch (Exception ex)
             {
-                File.AppendAllText("ex.log", ex.ToString() + Environment.NewLine);
+                FileUtils.FileAppendAllText("ex.log", ex.ToString() + Environment.NewLine);
+            }
+            finally
+            {
+                Door.Shutdown();
             }
         }
 
@@ -225,10 +226,6 @@ namespace RandM.TelnetDoor
         {
             foreach (string Arg in args)
             {
-                // With prefix it's something like:
-                // /Sbbs.ftelnet.ca
-                // Without prefix, it's something like:
-                // S=bbs.ftelnet.ca
                 if ((Arg.Length >= 2) && ((Arg[0] == '/') || (Arg[0] == '-')))
                 {
                     char Key = Arg.ToUpper()[1];
