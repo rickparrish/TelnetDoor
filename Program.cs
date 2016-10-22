@@ -191,6 +191,7 @@ namespace RandM.TelnetDoor
                                 }
                             }
                             _Server.Write(ToSend);
+                            if (Door.LocalEcho) Door.Write(ToSend);
 
                             Yield = false;
                         }
