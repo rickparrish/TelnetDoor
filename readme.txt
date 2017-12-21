@@ -12,6 +12,9 @@
 
 -M		Specify a different menu file (default is TelnetDoor.ini)
 
+-W      Wait up to a specified number of seconds before quitting (user can hit a key to quit sooner).  Default is 5 seconds
+        If you don't want to display a "Hit any key to quit" prompt, pass 0 as the number of seconds
+
 
 Examples:
 

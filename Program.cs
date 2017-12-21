@@ -34,6 +34,7 @@ namespace RandM.TelnetDoor
         static string _RLoginServerUserName = "";
         static string _RLoginTerminalType = "ansi-bbs";
         static TcpConnection _Server;
+        static int _WaitOnExit = 5;
 
         static void Main(string[] args)
         {
@@ -66,11 +67,17 @@ namespace RandM.TelnetDoor
 
                     // Pause before quitting
                     Door.ClearBuffers();
-                    Door.WriteLn();
-                    Door.TextAttr(15);
-                    Door.Write(new string(' ', 30) + "Hit any key to quit");
+                    if (_WaitOnExit > 0) {
+                        Door.WriteLn();
+                        Door.TextAttr(15);
+                        Door.Write(new string(' ', 30) + "Hit any key to quit");
+                        for (int i = 0; i < _WaitOnExit * 10; i++) {
+                            if (Door.KeyPressed()) break;
+                            Crt.Delay(100);
+                        }
+                        Door.ReadKey();
+                    }
                     Door.TextAttr(7);
-                    Door.ReadKey();
                 }
 
             }
@@ -248,6 +255,9 @@ namespace RandM.TelnetDoor
                             break;
                         case 'S':
                             WebUtils.ParseHostPort(Value, ref _HostName, ref _Port);
+                            break;
+                        case 'W':
+                            if (!int.TryParse(Value, out _WaitOnExit)) _WaitOnExit = 5;
                             break;
                         case 'X':
                             _RLogin = true;
