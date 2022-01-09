@@ -345,6 +345,9 @@ namespace RandM.TelnetDoor
                             HotKey = char.ToUpper((char)Ch);
                             if (Servers.ContainsKey(HotKey))
                             {
+                                // Reset settings so previous connection's settings don't bleed into this connection
+                                ResetSettings();
+
                                 // Valid option, set the parameters and connect
                                 List<string> Args = new List<string>();
                                 string[] Keys = Ini.ReadSection(Servers[HotKey]);
@@ -385,6 +388,18 @@ namespace RandM.TelnetDoor
                 Door.TextAttr(7);
                 Door.ReadKey();
             }
+        }
+
+        private static void ResetSettings()
+        {
+            Door.LocalEcho = false;
+            _HostName = "";
+            _Port = 0;
+            _RLogin = false;
+            _RLoginClientUserName = "";
+            _RLoginServerUserName = "";
+            _RLoginTerminalType = "";
+            _WaitOnExit = 5;
         }
     }
 }
