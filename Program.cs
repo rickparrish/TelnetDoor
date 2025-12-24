@@ -280,19 +280,23 @@ namespace RandM.TelnetDoor
         {
             string AnsiHeader = StringUtils.PathCombine(ProcessUtils.StartupPath, _MenuFile + "-Header.ans");
             string AnsiMenu = StringUtils.PathCombine(ProcessUtils.StartupPath, _MenuFile + ".ans");
-            SortedDictionary<char, string> Servers = new SortedDictionary<char, string>();
+            SortedDictionary<int, string> Servers = new SortedDictionary<int, string>();
             string ServersIni = StringUtils.PathCombine(ProcessUtils.StartupPath, _MenuFile + ".ini");
-
             if (File.Exists(ServersIni))
             {
                 using (IniFile Ini = new IniFile(ServersIni))
                 {
-                    char HotKey = 'A';
+                    int HotKey = 1;
                     string[] Sections = Ini.ReadSections();
                     foreach (string Section in Sections)
                     {
                         Servers.Add(HotKey, Section);
-                        HotKey = (char)(HotKey + 1);
+                        HotKey += 1;
+
+                        if (HotKey > 99) {
+                            // Only support up to 2 digits for menu options
+                            break;
+                        }
                     }
 
                     // Going to repeatedly display this menu until the user hits ESC to quit
@@ -319,30 +323,66 @@ namespace RandM.TelnetDoor
                             }
                             Door.WriteLn();
 
+                            // TODOX Don't assume 80x24
+                            // Determine how many rows we have to work with.  We assume a 80x24 terminal, and then subtract 2 because of the footer
+                            // (blank link + prompt line), and then subtract the current Y position to account for the header)
+                            int AvailableRows = 24 - 2 - (Crt.WhereY() - 1);
+                            // Determine how many columns we'll need
+                            int ColumnCount = (int)Math.Ceiling((double)Servers.Count / (double)AvailableRows);
+                            // Determine how wide each column can be, assuming an 80-column terminal
+                            int ColumnWidth = 80 / ColumnCount;
+
                             // Menu options
-                            foreach (KeyValuePair<char, string> KVP in Servers)
+                            Door.Write(Ansi.CursorSave());
+                            foreach (KeyValuePair<int, string> KVP in Servers)
                             {
-                                Door.WriteLn("  |0F[|0E" + KVP.Key.ToString() + "|0F]|07 " + KVP.Value);
+                                Door.Write(Ansi.CursorRestore());
+
+                                // Move to the correct column
+                                int currentColumn = (int)Math.Ceiling((double)KVP.Key / (double)AvailableRows);
+                                if (currentColumn > 1) {
+                                    Door.CursorRight(((currentColumn - 1) * ColumnWidth));
+                                }
+
+                                // Move to the correct row
+                                int currentRow = KVP.Key - ((currentColumn - 1) * AvailableRows);
+                                if (currentRow > 1) {
+                                    Door.CursorDown(currentRow - 1);
+                                }
+
+                                // Truncate the label, if it's too long for the column, then display the option
+                                string label = KVP.Value;
+                                if (label.Length >= ColumnWidth - " [##] ".Length) {
+                                    label = KVP.Value.Substring(0, ColumnWidth - " [##] ".Length - 1);
+                                }
+                                Door.WriteLn(" |0F[|0E" + KVP.Key.ToString("D2") + "|0F]|07 " + label);
+                            }
+
+                            Door.Write(Ansi.CursorRestore());
+                            if (ColumnCount > 1) {
+                                Door.CursorDown(AvailableRows);
+                            } else {
+                                Door.CursorDown(Servers.Count);
                             }
                             Door.WriteLn();
-                            Door.Write("  |0FYour choice (|0EESC|0F to abort):|07 ");
+                            Door.Write(" |0FYour choice (|0EESC|0F to abort):|07 ");
                         }
 
-                        char? Ch = Door.ReadKey();
-                        if (Ch == null)
+                        string input = Door.TextBox("", CharacterMask.Numeric, '\0', 2, 2, 7);
+                        if (input == null)
                         {
                             // Must have timed out waiting for input
                             return;
                         }
-                        else if ((char)Ch == '\x1B')
+                        else if (input == "")
                         {
-                            // Aborting
+                            // Hit escape
                             return;
                         }
                         else
                         {
                             // Ensure key is valid
-                            HotKey = char.ToUpper((char)Ch);
+                            HotKey = int.Parse(input);
                             if (Servers.ContainsKey(HotKey))
                             {
                                 // Reset settings so previous connection's settings don't bleed into this connection
